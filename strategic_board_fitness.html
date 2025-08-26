@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戦略バランスボード - フィットネス業界版 | DEARS CONSULTING</title>
+    <meta name="description" content="フィットネス業界に特化した戦略思考支援ツール。運動指導力、会員満足度、施設価値の動的相関から収益達成可能性を可視化します。">
+    <meta name="keywords" content="フィットネス,ジム,戦略分析,収益予測,運動指導,会員満足度,健康促進">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfccb 50%, #fef3c7 100%);
+        }
+        
+        .fitness-gradient {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 25%, #fef9e3 50%, #fed7aa 75%, #fecaca 100%);
+        }
+        
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #f1f5f9;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+        }
+        
+        .slider::-webkit-slider-thumb:hover {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(34, 197, 94, 0.4);
+        }
+        
+        .metric-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #22c55e;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 600px;
+            width: 100%;
+        }
+        
+        .insight-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 4px solid #fb923c;
+            transition: all 0.3s ease;
+        }
+        
+        .insight-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(251, 146, 60, 0.2);
+        }
+        
+        .score-display {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #22c55e, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .category-header {
+            background: linear-gradient(90deg, #22c55e, #f97316, #ef4444);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 600;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .score-display {
+                font-size: 2rem;
+            }
+            
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 400px;
+            }
+        }
+        
+        .strategy-weight {
+            background: linear-gradient(135df, #fb923c 0%, #f97316 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        
+        .correlation-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 0.5rem;
+        }
+        
+        .correlation-high { background-color: #059669; }
+        .correlation-medium { background-color: #d97706; }
+        .correlation-low { background-color: #dc2626; }
+    </style>
+</head>
+<body class="fitness-gradient min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-gray-800 py-6 shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">
+                        <i class="fas fa-dumbbell text-green-600 mr-3"></i>戦略バランスボード
+                    </h1>
+                    <p class="text-lg opacity-90">フィットネス業界版 - 健康とパフォーマンス向上の価値創造分析</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm opacity-80">Powered by</div>
+                    <div class="text-lg font-semibold">DEARS CONSULTING</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Left Column - Strategy Elements -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Industry Overview -->
+                <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-heartbeat text-green-600 mr-2"></i>フィットネス業界 戦略要素分析
+                    </h2>
+                    <p class="text-gray-600 mb-4">
+                        健康意識の高まりとウェルネスライフスタイルの浸透により、フィットネス事業の収益達成可能性を6つの戦略要素で分析します。
+                        運動指導の専門性、会員継続率の向上、施設価値の最大化の相関関係を可視化し、
+                        健康促進分野での持続的な競争優位性構築と収益最大化を支援します。
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">パーソナルトレーニング</span>
+                        <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">ウェルネス</span>
+                        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">会員継続</span>
+                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">健康成果</span>
+                    </div>
+                </div>
+
+                <!-- Strategic Elements -->
+                <div class="space-y-6">
+                    <!-- Trend Adaptation -->
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div class="category-header">
+                            <i class="fas fa-chart-line mr-2"></i>トレンド適合性
+                            <span class="strategy-weight">重み: 20%</span>
+                        </div>
+                        <div class="p-6">
+                            <div class="metric-grid">
+                                <!-- ウェルネス・予防医学対応 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">ウェルネス・予防医学対応</label>
+                                        <span id="wellness-prevention-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="wellness-prevention" name="wellness-prevention">
+                                    <div class="text-sm text-gray-500 mt-1">健康診断・生活習慣改善・疾病予防・メンタルヘルス</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- デジタルフィットネス対応 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">デジタルフィットネス対応</label>
+                                        <span id="digital-fitness-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="digital-fitness" name="digital-fitness">
+                                    <div class="text-sm text-gray-500 mt-1">アプリ連携・バーチャルトレーニング・AI指導・ウェアラブル</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- 高齢者・シニア対応 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">高齢者・シニア対応</label>
+                                        <span id="senior-fitness-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="senior-fitness" name="senior-fitness">
+                                    <div class="text-sm text-gray-500 mt-1">介護予防・ロコモ対策・認知症予防・安全配慮</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+
+                                <!-- 女性特化・ライフステージ対応 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">女性特化・ライフステージ対応</label>
+                                        <span id="women-lifecycle-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="women-lifecycle" name="women-lifecycle">
+                                    <div class="text-sm text-gray-500 mt-1">マタニティ・産後・更年期・女性専用・美容</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brand Power -->
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div class="category-header">
+                            <i class="fas fa-crown mr-2"></i>ブランド力
+                            <span class="strategy-weight">重み: 20%</span>
+                        </div>
+                        <div class="p-6">
+                            <div class="metric-grid">
+                                <!-- ブランド認知・差別化 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">ブランド認知・差別化</label>
+                                        <span id="brand-differentiation-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="brand-differentiation" name="brand-differentiation">
+                                    <div class="text-sm text-gray-500 mt-1">独自コンセプト・市場ポジション・競合優位性</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- 会員満足度・継続率 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">会員満足度・継続率</label>
+                                        <span id="member-satisfaction-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="member-satisfaction" name="member-satisfaction">
+                                    <div class="text-sm text-gray-500 mt-1">継続率・推奨度・コミュニティ・モチベーション維持</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- トレーナー・スタッフ品質 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">トレーナー・スタッフ品質</label>
+                                        <span id="trainer-quality-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="trainer-quality" name="trainer-quality">
+                                    <div class="text-sm text-gray-500 mt-1">専門資格・指導力・人間性・コミュニケーション</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- 成果・実績の可視化 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">成果・実績の可視化</label>
+                                        <span id="results-visualization-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="results-visualization" name="results-visualization">
+                                    <div class="text-sm text-gray-500 mt-1">ビフォーアフター・数値改善・成功事例・証明</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Service Power -->
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div class="category-header">
+                            <i class="fas fa-running mr-2"></i>指導・サービス力
+                            <span class="strategy-weight">重み: 25%</span>
+                        </div>
+                        <div class="p-6">
+                            <div class="metric-grid">
+                                <!-- 運動指導・プログラム開発力 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">運動指導・プログラム開発力</label>
+                                        <span id="program-development-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="program-development" name="program-development">
+                                    <div class="text-sm text-gray-500 mt-1">科学的根拠・個別対応・効果的メニュー・安全性</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- パーソナル指導・カスタマイズ -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">パーソナル指導・カスタマイズ</label>
+                                        <span id="personal-training-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="personal-training" name="personal-training">
+                                    <div class="text-sm text-gray-500 mt-1">個人目標・体力レベル・健康状態・ライフスタイル対応</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- 栄養・ライフスタイル指導 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">栄養・ライフスタイル指導</label>
+                                        <span id="nutrition-lifestyle-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="nutrition-lifestyle" name="nutrition-lifestyle">
+                                    <div class="text-sm text-gray-500 mt-1">食事指導・睡眠・ストレス管理・習慣改善</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+
+                                <!-- モチベーション維持・サポート -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">モチベーション維持・サポート</label>
+                                        <span id="motivation-support-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="motivation-support" name="motivation-support">
+                                    <div class="text-sm text-gray-500 mt-1">目標管理・進捗確認・励まし・習慣化支援</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Environment -->
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div class="category-header">
+                            <i class="fas fa-building mr-2"></i>経営環境
+                            <span class="strategy-weight">重み: 20%</span>
+                        </div>
+                        <div class="p-6">
+                            <div class="metric-grid">
+                                <!-- 立地・アクセス・駐車場 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">立地・アクセス・駐車場</label>
+                                        <span id="location-parking-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="location-parking" name="location-parking">
+                                    <div class="text-sm text-gray-500 mt-1">駅近・住宅地・駐車場・通勤路・利便性</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- 施設・設備の充実度 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">施設・設備の充実度</label>
+                                        <span id="facility-equipment-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="facility-equipment" name="facility-equipment">
+                                    <div class="text-sm text-gray-500 mt-1">マシン・更衣室・シャワー・プール・スタジオ</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+
+                                <!-- 営業時間・利便性 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">営業時間・利便性</label>
+                                        <span id="operating-hours-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="operating-hours" name="operating-hours">
+                                    <div class="text-sm text-gray-500 mt-1">24時間・早朝・夜遅く・年中無休・柔軟性</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+
+                                <!-- デジタル化・会員管理 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">デジタル化・会員管理</label>
+                                        <span id="digital-management-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="digital-management" name="digital-management">
+                                    <div class="text-sm text-gray-500 mt-1">アプリ・予約システム・入退館・進捗管理</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Strategy -->
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div class="category-header">
+                            <i class="fas fa-tags mr-2"></i>価格戦略
+                            <span class="strategy-weight">重み: 10%</span>
+                        </div>
+                        <div class="p-6">
+                            <div class="metric-grid">
+                                <!-- 価格設定・競争力 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">価格設定・競争力</label>
+                                        <span id="price-competitiveness-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="price-competitiveness" name="price-competitiveness">
+                                    <div class="text-sm text-gray-500 mt-1">市場価格・コスパ・サービス対価・競合比較</div>
+                                    <div class="correlation-indicator correlation-high" title="収益への影響度: 高"></div>
+                                </div>
+
+                                <!-- プラン・メニューの多様性 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">プラン・メニューの多様性</label>
+                                        <span id="plan-variety-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="plan-variety" name="plan-variety">
+                                    <div class="text-sm text-gray-500 mt-1">月会費・回数券・パーソナル・短期集中</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+
+                                <!-- 入会キャンペーン・特典 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">入会キャンペーン・特典</label>
+                                        <span id="campaign-benefits-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="campaign-benefits" name="campaign-benefits">
+                                    <div class="text-sm text-gray-500 mt-1">入会金無料・体験・紹介特典・継続特典</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+
+                                <!-- 価値訴求・ROI説明 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">価値訴求・ROI説明</label>
+                                        <span id="value-roi-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="value-roi" name="value-roi">
+                                    <div class="text-sm text-gray-500 mt-1">健康投資・医療費削減・生産性向上・QOL</div>
+                                    <div class="correlation-indicator correlation-low" title="収益への影響度: 低"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cost Efficiency -->
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <div class="category-header">
+                            <i class="fas fa-chart-pie mr-2"></i>コスト効率
+                            <span class="strategy-weight">重み: 5%</span>
+                        </div>
+                        <div class="p-6">
+                            <div class="metric-grid">
+                                <!-- 人件費効率・生産性 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">人件費効率・生産性</label>
+                                        <span id="labor-productivity-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="labor-productivity" name="labor-productivity">
+                                    <div class="text-sm text-gray-500 mt-1">適正配置・スキル向上・効率化・多能工化</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+
+                                <!-- 設備投資効率・償却 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">設備投資効率・償却</label>
+                                        <span id="equipment-roi-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="equipment-roi" name="equipment-roi">
+                                    <div class="text-sm text-gray-500 mt-1">マシン稼働率・メンテナンス・リース・更新</div>
+                                    <div class="correlation-indicator correlation-low" title="収益への影響度: 低"></div>
+                                </div>
+
+                                <!-- 固定費・運営コスト管理 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">固定費・運営コスト管理</label>
+                                        <span id="fixed-cost-management-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="fixed-cost-management" name="fixed-cost-management">
+                                    <div class="text-sm text-gray-500 mt-1">家賃・光熱費・清掃・保険・消耗品</div>
+                                    <div class="correlation-indicator correlation-low" title="収益への影響度: 低"></div>
+                                </div>
+
+                                <!-- マーケティング投資効率 -->
+                                <div class="metric-card bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="font-medium text-gray-700">マーケティング投資効率</label>
+                                        <span id="marketing-efficiency-value" class="text-green-600 font-bold">5</span>
+                                    </div>
+                                    <input type="range" min="1" max="10" value="5" class="slider" 
+                                           id="marketing-efficiency" name="marketing-efficiency">
+                                    <div class="text-sm text-gray-500 mt-1">広告効果・集客コスト・継続率・LTV</div>
+                                    <div class="correlation-indicator correlation-medium" title="収益への影響度: 中"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Results -->
+            <div class="space-y-6">
+                <!-- Score Display -->
+                <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-bullseye text-green-500 mr-2"></i>収益達成可能性
+                    </h3>
+                    <div class="score-display pulse" id="total-score">50</div>
+                    <div class="text-gray-600 mb-4">/ 100 点</div>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                        <div class="bg-gradient-to-r from-green-500 to-orange-500 h-4 rounded-full transition-all duration-500" 
+                             id="score-bar" style="width: 50%"></div>
+                    </div>
+                    <div id="score-status" class="text-lg font-semibold text-orange-600">要改善</div>
+                </div>
+
+                <!-- Chart -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-chart-pie text-green-600 mr-2"></i>戦略バランス分析
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="strategy-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Strategic Insights -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>戦略的インサイト
+                    </h3>
+                    <div id="insights-container" class="space-y-4">
+                        <div class="insight-card p-4 rounded-lg">
+                            <div class="font-semibold text-green-700 mb-2">
+                                <i class="fas fa-arrow-up mr-1"></i>強み領域
+                            </div>
+                            <div id="strengths" class="text-gray-700">分析中...</div>
+                        </div>
+                        <div class="insight-card p-4 rounded-lg">
+                            <div class="font-semibold text-red-700 mb-2">
+                                <i class="fas fa-arrow-down mr-1"></i>改善領域
+                            </div>
+                            <div id="weaknesses" class="text-gray-700">分析中...</div>
+                        </div>
+                        <div class="insight-card p-4 rounded-lg">
+                            <div class="font-semibold text-blue-700 mb-2">
+                                <i class="fas fa-rocket mr-1"></i>推奨アクション
+                            </div>
+                            <div id="recommendations" class="text-gray-700">分析中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">DEARS CONSULTING</h4>
+                    <p class="text-gray-300">
+                        経営コンサルティングと戦略的思考支援ツールの開発により、
+                        企業の持続的成長を支援しています。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">サービス</h4>
+                    <ul class="text-gray-300 space-y-2">
+                        <li>事業戦略コンサルティング</li>
+                        <li>ヘルスケア経営支援</li>
+                        <li>ブランディング支援</li>
+                        <li>顧客体験設計</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">お問い合わせ</h4>
+                    <div class="text-gray-300">
+                        <p>ホームページ: <a href="https://dearsconsulting.com" class="text-blue-400 hover:underline">dearsconsulting.com</a></p>
+                        <p>メール: staff@dearsconsulting.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-600 mt-8 pt-4 text-center text-gray-400">
+                <p>&copy; 2025 DEARS CONSULTING - Strategic Balance Board. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Strategic weights for fitness industry
+        const WEIGHTS = {
+            trend: 0.20,      // ウェルネストレンド
+            brand: 0.20,      // ブランド力・会員満足度
+            service: 0.25,    // 指導・サービス力（最重要）
+            environment: 0.20, // 経営環境・施設
+            pricing: 0.10,    // 価格戦略
+            cost: 0.05        // コスト効率
+        };
+
+        // Chart instance
+        let strategyChart;
+
+        // Initialize the application
+        function init() {
+            setupSliders();
+            createChart();
+            updateAnalysis();
+        }
+
+        // Setup all sliders with event listeners
+        function setupSliders() {
+            const sliders = document.querySelectorAll('.slider');
+            sliders.forEach(slider => {
+                const valueSpan = document.getElementById(slider.id + '-value');
+                if (valueSpan) {
+                    valueSpan.textContent = slider.value;
+                }
+
+                slider.addEventListener('input', function() {
+                    if (valueSpan) {
+                        valueSpan.textContent = this.value;
+                    }
+                    updateAnalysis();
+                });
+            });
+        }
+
+        // Create the strategy chart
+        function createChart() {
+            const ctx = document.getElementById('strategy-chart').getContext('2d');
+            
+            strategyChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        'トレンド適合性',
+                        'ブランド力', 
+                        '指導・サービス力',
+                        '経営環境',
+                        '価格戦略',
+                        'コスト効率'
+                    ],
+                    datasets: [{
+                        data: [50, 50, 50, 50, 50, 50],
+                        backgroundColor: [
+                            '#22C55E', // Green
+                            '#F97316', // Orange
+                            '#EF4444', // Red
+                            '#3B82F6', // Blue
+                            '#F59E0B', // Amber
+                            '#10B981'  // Emerald
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    family: 'Noto Sans JP'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const weight = Object.values(WEIGHTS)[context.dataIndex] * 100;
+                                    return `${label}: ${value}点 (重み${weight}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000
+                    }
+                }
+            });
+        }
+
+        // Update analysis based on current slider values
+        function updateAnalysis() {
+            const scores = calculateScores();
+            const totalScore = calculateTotalScore(scores);
+            
+            updateScoreDisplay(totalScore);
+            updateChart(scores);
+            updateInsights(scores, totalScore);
+        }
+
+        // Calculate scores for each category
+        function calculateScores() {
+            return {
+                trend: calculateCategoryScore([
+                    'wellness-prevention',
+                    'digital-fitness', 
+                    'senior-fitness',
+                    'women-lifecycle'
+                ]),
+                brand: calculateCategoryScore([
+                    'brand-differentiation',
+                    'member-satisfaction',
+                    'trainer-quality', 
+                    'results-visualization'
+                ]),
+                service: calculateCategoryScore([
+                    'program-development',
+                    'personal-training',
+                    'nutrition-lifestyle',
+                    'motivation-support'
+                ]),
+                environment: calculateCategoryScore([
+                    'location-parking',
+                    'facility-equipment',
+                    'operating-hours',
+                    'digital-management'
+                ]),
+                pricing: calculateCategoryScore([
+                    'price-competitiveness',
+                    'plan-variety',
+                    'campaign-benefits',
+                    'value-roi'
+                ]),
+                cost: calculateCategoryScore([
+                    'labor-productivity',
+                    'equipment-roi',
+                    'fixed-cost-management',
+                    'marketing-efficiency'
+                ])
+            };
+        }
+
+        // Calculate score for a category
+        function calculateCategoryScore(sliderIds) {
+            let total = 0;
+            sliderIds.forEach(id => {
+                const slider = document.getElementById(id);
+                if (slider) {
+                    total += parseInt(slider.value);
+                }
+            });
+            return (total / sliderIds.length) * 10;
+        }
+
+        // Calculate total weighted score
+        function calculateTotalScore(scores) {
+            return Math.round(
+                scores.trend * WEIGHTS.trend +
+                scores.brand * WEIGHTS.brand +
+                scores.service * WEIGHTS.service +
+                scores.environment * WEIGHTS.environment +
+                scores.pricing * WEIGHTS.pricing +
+                scores.cost * WEIGHTS.cost
+            );
+        }
+
+        // Update score display
+        function updateScoreDisplay(score) {
+            const scoreElement = document.getElementById('total-score');
+            const scoreBar = document.getElementById('score-bar');
+            const scoreStatus = document.getElementById('score-status');
+
+            scoreElement.textContent = score;
+            scoreBar.style.width = score + '%';
+
+            if (score >= 80) {
+                scoreStatus.textContent = '優秀';
+                scoreStatus.className = 'text-lg font-semibold text-green-600';
+                scoreBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-4 rounded-full transition-all duration-500';
+            } else if (score >= 60) {
+                scoreStatus.textContent = '良好';
+                scoreStatus.className = 'text-lg font-semibold text-blue-600';
+                scoreBar.className = 'bg-gradient-to-r from-blue-400 to-blue-600 h-4 rounded-full transition-all duration-500';
+            } else if (score >= 40) {
+                scoreStatus.textContent = '要改善';
+                scoreStatus.className = 'text-lg font-semibold text-orange-600';
+                scoreBar.className = 'bg-gradient-to-r from-orange-400 to-orange-600 h-4 rounded-full transition-all duration-500';
+            } else {
+                scoreStatus.textContent = '要緊急改善';
+                scoreStatus.className = 'text-lg font-semibold text-red-600';
+                scoreBar.className = 'bg-gradient-to-r from-red-400 to-red-600 h-4 rounded-full transition-all duration-500';
+            }
+        }
+
+        // Update chart with new scores
+        function updateChart(scores) {
+            if (strategyChart) {
+                strategyChart.data.datasets[0].data = [
+                    scores.trend,
+                    scores.brand,
+                    scores.service,
+                    scores.environment,
+                    scores.pricing,
+                    scores.cost
+                ];
+                strategyChart.update('active');
+            }
+        }
+
+        // Update strategic insights
+        function updateInsights(scores, totalScore) {
+            const categories = {
+                'トレンド適合性': scores.trend,
+                'ブランド力': scores.brand,
+                '指導・サービス力': scores.service,
+                '経営環境': scores.environment,
+                '価格戦略': scores.pricing,
+                'コスト効率': scores.cost
+            };
+
+            const sortedCategories = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+            const strengths = sortedCategories.slice(0, 2);
+            const weaknesses = sortedCategories.slice(-2);
+
+            const strengthsElement = document.getElementById('strengths');
+            strengthsElement.innerHTML = strengths.map(([category, score]) => 
+                `<div class="mb-1"><strong>${category}</strong>: ${score.toFixed(1)}点</div>`
+            ).join('');
+
+            const weaknessesElement = document.getElementById('weaknesses');
+            weaknessesElement.innerHTML = weaknesses.map(([category, score]) => 
+                `<div class="mb-1"><strong>${category}</strong>: ${score.toFixed(1)}点</div>`
+            ).join('');
+
+            const recommendations = generateRecommendations(categories, totalScore);
+            const recommendationsElement = document.getElementById('recommendations');
+            recommendationsElement.innerHTML = recommendations.map(rec => 
+                `<div class="mb-2">• ${rec}</div>`
+            ).join('');
+        }
+
+        // Generate strategic recommendations
+        function generateRecommendations(categories, totalScore) {
+            const recommendations = [];
+
+            if (categories['トレンド適合性'] < 60) {
+                recommendations.push('ウェルネス・予防医学の観点を取り入れ、デジタルフィットネスとシニア対応で市場拡大を図ってください');
+            }
+
+            if (categories['ブランド力'] < 60) {
+                recommendations.push('会員満足度向上とトレーナー品質強化により、口コミと継続率を改善してください');
+            }
+
+            if (categories['指導・サービス力'] < 60) {
+                recommendations.push('科学的根拠に基づくプログラム開発と、パーソナライズ指導でサービス価値を向上させてください');
+            }
+
+            if (categories['経営環境'] < 60) {
+                recommendations.push('立地の優位性活用と施設の利便性向上により、会員の利用頻度を高めてください');
+            }
+
+            if (categories['価格戦略'] < 60) {
+                recommendations.push('健康投資としての価値訴求と、多様なプランで顧客層を拡大してください');
+            }
+
+            if (categories['コスト効率'] < 60) {
+                recommendations.push('人材の多能工化と設備稼働率向上により、収益性を改善してください');
+            }
+
+            if (totalScore < 40) {
+                recommendations.unshift('指導力とブランド力を中心とした根本的な事業モデル見直しが必要です');
+            } else if (totalScore < 60) {
+                recommendations.unshift('会員継続率向上とウェルネス価値提供により、競争優位性を強化してください');
+            } else if (totalScore >= 80) {
+                recommendations.push('現在の強みを活かし、法人向けサービスや新業態展開を検討してください');
+            }
+
+            return recommendations.slice(0, 4);
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
